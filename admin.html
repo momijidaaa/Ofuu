@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>管理者ページ</title>
+</head>
+<body>
+  <h2>🔐 管理者ログイン</h2>
+  <input type="password" id="pw" placeholder="パスワード">
+  <button onclick="login()">ログイン</button>
+
+  <div id="list" style="display:none;">
+    <h3>📋 参加者一覧</h3>
+    <ul id="entries"></ul>
+  </div>
+
+  <script>
+    const PASSWORD = "momiji10"; // 管理パスワード
+
+    async function login() {
+      const input = document.getElementById("pw").value;
+      if (input !== PASSWORD) {
+        alert("パスワードが違います");
+        return;
+      }
+      document.getElementById("list").style.display = "block";
+
+      const sheetUrl = "https://docs.google.com/spreadsheets/d/19fngs0LLsK4_4E53KLLdBRd_HLmQHlOrhMwXo94zIcc/gviz/tq?tqx=out:json";
+
+      fetch(sheetUrl)
+        .then(res => res.text())
+        .then(txt => {
+          const json = JSON.parse(txt.substr(47).slice(0, -2));
+          const rows = json.table.rows;
+          const ul = document.getElementById("entries");
+          ul.innerHTML = "";
+          rows.forEach(row => {
+            const name = row.c[0]?.v || "（無記名）";
+            const ip = row.c[1]?.v || "IP不明";
+            const time = row.c[2]?.v || "時間不明";
+            const li = document.createElement("li");
+            li.textContent = `${name}（${ip}） - ${time}`;
+            ul.appendChild(li);
+          });
+        })
+        .catch(() => alert("参加者一覧の読み込みに失敗しました"));
+    }
+  </script>
+</body>
+</html>;
+          li.innerHTML = `<strong>${row.名前}</strong>
+                          <div class="ip">IP: ${row.IP}<br>日時: ${row.時間}</div>`;
+          list.appendChild(li);
+        });
+      } catch (err) {
+        alert("参加者一覧の読み込みに失敗しました。スプレッドシートの共有設定を確認してください。");
+      }
+    }
+  </script>
+</body>
+</html>
