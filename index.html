@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <title>オフ会受付</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      background: #f8f9fa;
+      font-family: sans-serif;
+      padding: 2em;
+      max-width: 600px;
+      margin: auto;
+    }
+    h1 {
+      text-align: center;
+    }
+    input, button {
+      padding: 1em;
+      font-size: 1em;
+      width: 100%;
+      margin: 0.5em 0;
+      border-radius: 0.5em;
+      border: 1px solid #ccc;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      background: #fff;
+      margin: 0.3em 0;
+      padding: 0.8em;
+      border-radius: 0.5em;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    }
+    .ip {
+      font-size: 0.8em;
+      color: #666;
+    }
+    .admin {
+      margin-top: 2em;
+      padding: 1em;
+      background: #eee;
+      border-radius: 0.5em;
+    }
+    #adminSection {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎉 オフ会受付フォーム</h1>
+
+  <input id="nameInput" type="text" placeholder="あなたの名前を入力">
+  <button onclick="addParticipant()">参加する</button>
+
+  <div class="admin">
+    <h3>🔐 管理者ログイン</h3>
+    <input id="adminPass" type="password" placeholder="パスワードを入力">
+    <button onclick="toggleAdmin()">ログイン / ログアウト</button>
+  </div>
+
+  <div id="adminSection">
+    <h2>参加者一覧（管理者用）</h2>
+    <ul id="participantList"></ul>
+  </div>
+
+  <script>
+    const nameInput = document.getElementById("nameInput");
+    const participantList = document.getElementById("participantList");
+    const adminPassInput = document.getElementById("adminPass");
+    const adminSection = document.getElementById("adminSection");
+
+    let isAdmin = false;
+    const ADMIN_PASSWORD = "admin123";
+
+    function saveList(list) {
+      localStorage.setItem("participants", JSON.stringify(list));
+    }
+
+    function loadList() {
+      const stored = localStorage.getItem("participants");
+      return stored ? JSON.parse(stored) : [];
+    }
+
+    function updateDisplay() {
+      if (!isAdmin) {
+        adminSection.style.display = "none";
+        return;
+      }
+
+      adminSection.style.display = "block";
+      participantList.innerHTML = "";
+      const list = loadList();
+      list.forEach(entry => {
+        const li = document.createElement("li");
+        li.innerHTML = `<strong>${entry.name}</strong><div class="ip">IP: ${entry.ip}</div>`;
+        participantList.appendChild(li);
+      });
+    }
+
+    async function getIP() {
+      try {
+        const res = await fetch("https://api.ipify.org?format=json");
+        const data = await res.json();
+        return data.ip;
+      } catch (e) {
+        return null;
+      }
+    }
+
+    async function addParticipant() {
+      const name = nameInput.value.trim();
+      if (!name) return alert("名前を入力してください！");
+      const ip = await getIP();
+      if (!ip) return alert("IP取得に失敗しました。再試行してください。");
+
+      const list = loadList();
+
+      if (list.some(entry => entry.ip === ip)) {
+        return alert("すでにこの端末（IP）から参加登録されています。");
+      }
+
+      list.push({ name, ip });
+      saveList(list);
+      nameInput.value = "";
+      alert("参加登録が完了しました！");
+      updateDisplay();
+    }
+
+    function toggleAdmin() {
+      const entered = adminPassInput.value;
+      if (entered === ADMIN_PASSWORD) {
+        isAdmin = !isAdmin;
+        alert(isAdmin ? "管理者モード ON" : "管理者モード OFF");
+      } else {
+        alert("パスワードが違います。");
+        isAdmin = false;
+      }
+      updateDisplay();
+    }
+
+    updateDisplay();
+  </script>
+</body>
+</html>
